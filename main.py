@@ -1,5 +1,8 @@
 import sqlite3
-import urllib.request, json, urllib.parse
+import urllib.request
+import json
+import urllib.parse
+
 
 class DataTranslation(object):
     """
@@ -16,7 +19,7 @@ class DataTranslation(object):
             self.data.append(row[3])
 
     def get_lang(self):
-        url1 = 'https://translate.yandex.net/api/v1.5/tr.json/detect?'+\
+        url1 = 'https://translate.yandex.net/api/v1.5/tr.json/detect?'+ \
                urllib.parse.urlencode({'text': self.data,
                                        'key': self.key})
         file = urllib.request.urlopen(url1).read()
@@ -26,10 +29,10 @@ class DataTranslation(object):
     def make_translation(self):
         language = self.get_lang(self.data)
         if self.data:
-            url2 = 'https://translate.yandex.net/api/v1.5/tr.json/translate?'+\
-               urllib.parse.urlencode({'text': self.data,
-                                       'key': self.key,
-                                       'lang': language+'-ru'})
+            url2 = 'https://translate.yandex.net/api/v1.5/tr.json/translate?'+ \
+                   urllib.parse.urlencode({'text': self.data,
+                                           'key': self.key,
+                                           'lang': language+'-ru'})
             file = urllib.request.urlopen(url2).read()
             js = json.loads(file.decode('utf-8'))
             print(js)
