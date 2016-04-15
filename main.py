@@ -61,9 +61,17 @@ class DataTranslation(tkinter.Frame):
 
     @staticmethod
     def message_box(info):
+        """
+        Функция отвечает за вывод всплывающего окна, сообщающего о различных ошибках
+        """
         messagebox.showinfo('Сообщение',info)
 
     def get_data(self):
+        """
+        Функция используется для извленчения данных из базы данных на kindle
+        по указаному пользователем пути, или по пути по умолчанию, если поле
+        пользователь не заполнил
+        """
         path = self.path.get() if self.path.get() else '/Users/smosker/vocab.db'
 
         try:
@@ -79,6 +87,9 @@ class DataTranslation(tkinter.Frame):
         return data
 
     def clear_vocabulary(self):
+        """
+        Функция выполняет очистку таблицы со словами в базе данных kindle
+        """
         path = self.path.get() if self.path.get() else '/Users/smosker/vocab.db'
         conn = sqlite3.connect(path)
         conn.execute("DELETE FROM WORDS")
@@ -86,8 +97,13 @@ class DataTranslation(tkinter.Frame):
         conn.commit()
         self.message_box("Очистка словаря завершена")
 
-
     def get_lang(self, data):
+        """
+        Функция используется для получения исходного языка слов в словаре,
+        используется в функциях make_translation_translator/make_translation_vocabulary
+        при передаче запроса на перевод
+        :param data: list
+        """
         url1 = 'https://translate.yandex.net/api/v1.5/tr.json/detect?' + \
                urllib.parse.urlencode({'text': data,
                                        'key': self.get_key_trans.get()
@@ -97,6 +113,15 @@ class DataTranslation(tkinter.Frame):
         return js['lang']
 
     def make_translation_translator(self, data, language):
+        """
+        Функция использует api яндекс.переводчика для получения перевода
+        слов извлеченных из базы данных, запрос одновременно обрабатывает 500 слов
+        из-за ограничений api (10000 символов за раз).
+
+        :param data: list
+        :param language: str
+        :return: None
+        """
         translated_data = []
 
         for i in range(0, len(data), 500):
@@ -111,23 +136,38 @@ class DataTranslation(tkinter.Frame):
 
         self.result.extend(zip(data, translated_data))
 
-    def make_translation_vocabulary(self, data):
+    def make_translation_vocabulary(self, data, language):
+        """
+        Функция использует api яндекс.словаря для получения перевода
+        слов извлеченных из базы данных, по каждому слову посылается отдельный запрос -
+        это и сказывается на времени работы программы в данном режиме (это ограничение
+        накладывает api).
+
+        :param data: list
+        :param language: str
+        :return: None
+        """
         not_translated = []
         for i in data:
             try:
                 request = 'https://dictionary.yandex.net/api/v1/dicservice.json/lookup?' + \
                     urllib.parse.urlencode({'text': i,
                                             'key': self.get_key_vocab.get(),
-                                            'lang': 'en-ru'})
+                                            'lang': language+'-ru'})
                 result = urllib.request.urlopen(request).read()
                 js = json.loads(result.decode('utf-8'))
                 self.result.append([i, js['def'][0]['tr'][0]['text']])
             except IndexError:
                 not_translated.append(i)
         if not_translated:
-            self.make_translation_translator(not_translated, 'en')
+            self.make_translation_translator(not_translated, language)
 
     def make_csv(self):
+        """
+        Функция формирует на основе списка из списков вида [слово,перевод] файл пригодный
+        для импорта в программу anki
+        :return: None
+        """
         if self.result:
             with open("file_to_import.csv", "w", newline='') as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
@@ -138,16 +178,20 @@ class DataTranslation(tkinter.Frame):
             self.message_box("Результирующий файл пуст, проверьте корректность пути к файлу")
 
     def main(self):
+        """
+        Основная фукнция приложения, запускает процесс извлечения и перевода слов
+        """
         data = self.get_data()
         try:
+            language = self.get_lang(data[:10])
             if self.speed.get():
-                self.make_translation_vocabulary(data)
+                self.make_translation_vocabulary(data,language)
             else:
-                language = self.get_lang(data[:10])
                 self.make_translation_translator(data, language)
             self.make_csv()
         except urllib.error.HTTPError:
             self.message_box("Произошла ошибка с работой api, проверьте валидность ключей")
+        self.result.clear()
 
 
 if __name__ == '__main__':
