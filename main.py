@@ -68,11 +68,11 @@ class DataTranslation(tkinter.Frame):
 
     def get_data(self):
         """
-        Функция используется для извленчения данных из базы данных на kindle
+        Функция используется для извлечения данных из базы данных на kindle
         по указаному пользователем пути, или по пути по умолчанию, если поле
         пользователь не заполнил
         """
-        path = self.path.get() if self.path.get() else '/Users/smosker/vocab.db'
+        path = self.path.get() if self.path.get() else '/kindle/system/vocabulary/vocab.db'
 
         try:
             conn = sqlite3.connect(path)
