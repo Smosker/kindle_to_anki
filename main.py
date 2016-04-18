@@ -43,7 +43,8 @@ class DataTranslation(tkinter.Frame):
         self.path.pack()
 
 
-        tkinter.Checkbutton(self, font=("Helvetica", 20), text='Перевести лучше, но медленнее', variable=self.speed,onvalue = 1, offvalue = 0).pack()
+        tkinter.Checkbutton(self, font=("Helvetica", 20), text='Перевести лучше, но медленнее',
+                            variable=self.speed, onvalue = 1, offvalue = 0).pack()
 
         tkinter.Label(self, text='Ключ для переводчика:', font=("Helvetica", 18)).pack()
         self.get_key_trans = tkinter.Entry(self, font=("Helvetica", 20))
@@ -56,7 +57,8 @@ class DataTranslation(tkinter.Frame):
         self.bttn = tkinter.Button(self, text='Создать файл для импорта', command=self.main, font=("Helvetica", 20))
         self.bttn.pack()
 
-        self.bttn = tkinter.Button(self, text='Очистить словарь на устройстве', command=self.clear_vocabulary, font=("Helvetica", 20))
+        self.bttn = tkinter.Button(self, text='Очистить словарь на устройстве',
+                                   command=self.clear_vocabulary, font=("Helvetica", 20))
         self.bttn.pack()
 
     @staticmethod
@@ -64,16 +66,15 @@ class DataTranslation(tkinter.Frame):
         """
         Функция отвечает за вывод всплывающего окна, сообщающего о различных ошибках
         """
-        messagebox.showinfo('Сообщение',info)
+        messagebox.showinfo('Сообщение', info)
 
-    def get_data(self):
+    def get_data(self, path):
         """
         Функция используется для извлечения данных из базы данных на kindle
         по указаному пользователем пути, или по пути по умолчанию, если поле
         пользователь не заполнил
+        :param path: str
         """
-        path = self.path.get() if self.path.get() else '/kindle/system/vocabulary/vocab.db'
-
         try:
             conn = sqlite3.connect(path)
             cursor = conn.execute("SELECT stem from WORDS")
@@ -90,7 +91,7 @@ class DataTranslation(tkinter.Frame):
         """
         Функция выполняет очистку таблицы со словами в базе данных kindle
         """
-        path = self.path.get() if self.path.get() else '/Users/smosker/vocab.db'
+        path = self.path.get() if self.path.get() else '/kindle/system/vocabulary/vocab.db'
         conn = sqlite3.connect(path)
         conn.execute("DELETE FROM WORDS")
         conn.execute("VACUUM")
@@ -106,8 +107,7 @@ class DataTranslation(tkinter.Frame):
         """
         url1 = 'https://translate.yandex.net/api/v1.5/tr.json/detect?' + \
                urllib.parse.urlencode({'text': data,
-                                       'key': self.get_key_trans.get()
-               })
+                                       'key': self.get_key_trans.get()})
         file = urllib.request.urlopen(url1).read()
         js = json.loads(file.decode('utf-8'))
         return js['lang']
@@ -181,11 +181,12 @@ class DataTranslation(tkinter.Frame):
         """
         Основная фукнция приложения, запускает процесс извлечения и перевода слов
         """
-        data = self.get_data()
+        path = self.path.get() if self.path.get() else '/kindle/system/vocabulary/vocab.db'
+        data = self.get_data(path)
         try:
             language = self.get_lang(data[:10])
             if self.speed.get():
-                self.make_translation_vocabulary(data,language)
+                self.make_translation_vocabulary(data, language)
             else:
                 self.make_translation_translator(data, language)
             self.make_csv()
